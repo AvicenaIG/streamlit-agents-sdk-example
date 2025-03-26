@@ -53,7 +53,7 @@ def message_with_feedback(message: Dict, index: int) -> None:
         # If the message has steps, display them in an expander
         if "steps" in message and message["steps"] and st.session_state.get("show_thinking", False):
             with st.expander("Steps", expanded=False):
-                st.markdown("\n".join(message["steps"]))
+                st.write("\n".join(message["steps"]))
         
         # Display the message content
         st.markdown(message["content"])

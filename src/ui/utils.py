@@ -82,44 +82,83 @@ def setup_sidebar() -> None:
         st.markdown('<div class="sidebar-content">', unsafe_allow_html=True)
         st.markdown('<hr class="sidebar-hr">', unsafe_allow_html=True)
 
-        # Dropdown to select provider
-        active_providers = st.secrets["providers"]["active"]
-        labels = st.secrets["provider_labels"]
-        
-        # Add a custom heading with CSS class
-        st.markdown('<h3 class="provider-heading">Select LLM Provider</h3>', unsafe_allow_html=True)
-        selected_provider = st.selectbox(
-            label="provider",
-            label_visibility="hidden",
-            options=active_providers,
-            index=0,
-            format_func=lambda x: labels[x],
-            key="provider_select",
-        )
-
-        # LLM Provider Configuration
-        configure_llm_client(
-            selected_provider, selected_provider_label=labels[selected_provider]
-        )
+        # Configure provider selection
+        _configure_provider_selection()
         
         st.markdown('<hr class="sidebar-hr">', unsafe_allow_html=True)
         
-        # Feature toggles
-        st.markdown('<h3 class="sidebar-heading">Features</h3>', unsafe_allow_html=True)
-        st.toggle("Show Thinking Process", value=st.session_state.get("show_thinking", True), key="show_thinking")
+        # Configure feature toggles
+        _configure_feature_toggles()
         
         st.markdown('<hr class="sidebar-hr">', unsafe_allow_html=True)
         
         # About section
-        st.markdown('<h3 class="sidebar-heading">About</h3>', unsafe_allow_html=True)
-        st.markdown(
-            '<div class="card">'
-            'This is a demo of a multi-agent chat system powered by different LLM providers.'
-            '</div>',
-            unsafe_allow_html=True
-        )
+        _display_about_section()
         
         st.markdown("</div>", unsafe_allow_html=True)
+
+def _configure_provider_selection() -> None:
+    """Configure provider selection dropdown and setup LLM client."""
+    # Get provider configuration
+    active_providers = st.secrets["providers"]["active"]
+    labels = st.secrets["provider_labels"]
+    
+    # Add heading
+    st.markdown('<h3 class="provider-heading">Select LLM Provider</h3>', unsafe_allow_html=True)
+    
+    # Create provider selection dropdown
+    selected_provider = st.selectbox(
+        label="provider",
+        label_visibility="hidden",
+        options=active_providers,
+        index=0,
+        format_func=lambda x: labels[x],
+        key="provider_select",
+    )
+
+    # Configure the selected LLM client
+    configure_llm_client(
+        selected_provider, 
+        selected_provider_label=labels[selected_provider]
+    )
+
+def _configure_feature_toggles() -> None:
+    """Configure feature toggles in the sidebar."""
+    st.markdown('<h3 class="sidebar-heading">Features</h3>', unsafe_allow_html=True)
+    
+    # Toggle for showing thinking process
+    st.toggle(
+        "Show Thinking Process", 
+        value=st.session_state.get("show_thinking", True), 
+        key="show_thinking"
+    )
+    
+    # Configure streaming toggle based on provider support
+    selected_provider = st.session_state.get("provider_select")
+    provider_supports_streaming = get_streaming_status(selected_provider)
+    
+    # Toggle for response streaming
+    st.toggle(
+        "Use Response Streaming", 
+        value=provider_supports_streaming,
+        disabled=not provider_supports_streaming,
+        key="use_streaming"
+    )
+    
+    # Add note for disabled streaming
+    if not provider_supports_streaming:
+        provider_label = st.secrets["provider_labels"][selected_provider]
+        st.caption(f"Note: disabled streaming for {provider_label}")
+
+def _display_about_section() -> None:
+    """Display the about section in the sidebar."""
+    st.markdown('<h3 class="sidebar-heading">About</h3>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="card">'
+        'This is a demo of a multi-agent chat system powered by different LLM providers.'
+        '</div>',
+        unsafe_allow_html=True
+    )
 
 def get_streaming_status(provider: str) -> bool:
     """
@@ -295,14 +334,13 @@ def render_static_response(response: Dict, agent_emoji: str) -> Dict:
 # CHAT INTERACTION HANDLER
 #------------------------------------------------------------------------------
 
-def handle_chat_interaction(agent: Agent, use_streaming: bool = True) -> None:
+def handle_chat_interaction(agent: Agent) -> None:
     """Handles chat interaction with streaming/non-streaming options."""
     provider = st.session_state.get("llm_provider")
     user_emoji, agent_emoji = get_emojis(provider)
     
-    # Check if provider supports streaming
-    can_stream = get_streaming_status(provider)
-    use_streaming = use_streaming and can_stream
+    # Get streaming preference from session state
+    use_streaming = st.session_state.get("use_streaming", True)
 
     if prompt := st.chat_input("Ask me anything...", key="chat_input"):
         # Save user message

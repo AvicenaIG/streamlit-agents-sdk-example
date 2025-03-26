@@ -1,0 +1,265 @@
+/*==============================================================================
+ * CSS VARIABLES FOR CONSISTENT THEMING
+ *==============================================================================*/
+:root {
+  /* Color palette */
+  --primary-color: #7C4DFF;
+  --secondary-color: #448AFF;
+  --text-color: #333333;
+  --text-light: #ffffff;
+  --bg-light: #ffffff;
+  --shadow-light: rgba(0, 0, 0, 0.05);
+  --shadow-medium: rgba(0, 0, 0, 0.1);
+  
+  /* Spacing */
+  --spacing-xs: 0.3rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  
+  /* Border radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 15px;
+  --radius-round: 30px;
+  
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  --gradient-feature: linear-gradient(135deg, rgba(124, 77, 255, 0.1) 0%, rgba(68, 138, 255, 0.1) 100%);
+  --gradient-feature-hover: linear-gradient(135deg, rgba(124, 77, 255, 0.15) 0%, rgba(68, 138, 255, 0.15) 100%);
+}
+
+/*==============================================================================
+ * BASE STYLES & UTILITIES
+ *==============================================================================*/
+/* Main app container */
+.stApp {
+  margin: 0 auto;
+}
+
+/* Loading spinner */
+.stSpinner > div {
+  border-color: var(--primary-color) transparent transparent !important;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/*==============================================================================
+ * HEADER SECTION
+ *==============================================================================*/
+.main-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+  background: var(--gradient-primary);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  color: var(--text-light);
+  box-shadow: 0 4px 15px var(--shadow-medium);
+  text-align: center;
+}
+
+.main-header-content {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+}
+
+.main-header-image {
+  width: 60px;
+  animation: pulse 2s infinite var(--transition-normal);
+}
+
+.main-header h1 {
+  margin: 0;
+  padding: 0;
+  color: var(--text-light) !important;
+  font-size: 2.5rem !important;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px var(--shadow-medium);
+}
+
+.main-header p {
+  margin: 10px 0 0 0;
+  opacity: 0.9;
+  color: var(--text-light) !important;
+  font-size: 1.1rem !important;
+}
+
+/*==============================================================================
+ * SIDEBAR SECTION
+ *==============================================================================*/
+/* Sidebar content container */
+.sidebar-content {
+  margin-top: 0;
+  padding: var(--spacing-xs);
+}
+
+/* Handle sidebar height and scroll behavior */
+[data-testid="stSidebar"] {
+  height: auto !important;
+}
+
+/* Target all scrollable sidebar elements */
+[data-testid="stSidebar"] > div,
+[data-testid="stSidebar"] > div > div,
+[data-testid="stSidebar"] [class*="st-emotion-cache"] {
+  height: auto !important;
+  overflow: visible !important;
+  min-height: unset !important;
+  max-height: unset !important;
+}
+
+/* Hide scrollbar while keeping functionality */
+[data-testid="stSidebar"] * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+[data-testid="stSidebar"] *::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+.sidebar-hr {
+  margin: var(--spacing-xs) 0;
+  border-color: var(--shadow-light);
+}
+
+.sidebar-heading {
+  font-size: 1rem;
+  margin: var(--spacing-xs) 0;
+  color: var(--text-color);
+}
+
+/* Sidebar images */
+.sidebar-image {
+  display: block;
+  margin: 0 auto var(--spacing-md) auto;
+  filter: drop-shadow(0 4px 8px var(--shadow-light));
+}
+
+/* Sidebar element containers */
+.stElementContainer {
+  margin-bottom: var(--spacing-sm);
+  height: auto !important;
+}
+
+/*==============================================================================
+ * STREAMLIT UI COMPONENTS
+ *==============================================================================*/
+/* Expander styling */
+.stExpander {
+  border: none !important;
+  box-shadow: 0 2px 5px var(--shadow-light);
+  border-radius: var(--radius-md);
+  transition: var(--transition-fast);
+}
+
+.stExpander:hover {
+  box-shadow: 0 4px 12px var(--shadow-medium);
+}
+
+/* Feedback button */
+.stFeedback {
+  margin-top: var(--spacing-sm);
+}
+
+/*==============================================================================
+ * CUSTOM COMPONENTS
+ *==============================================================================*/
+/* Cards styling */
+.card {
+  background: var(--bg-light);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  box-shadow: 0 4px 6px var(--shadow-light);
+  transition: var(--transition-normal);
+}
+
+.welcome-card {
+  text-align: center;
+  padding: 30px;
+}
+
+.sidebar-content .card {
+  padding: var(--spacing-sm);
+  font-size: 0.9rem;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 15px var(--shadow-medium);
+}
+
+/* Feature list */
+.feature-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+  justify-content: center;
+}
+
+.feature-item {
+  background: var(--gradient-feature);
+  padding: 8px 16px;
+  border-radius: var(--radius-round);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--primary-color);
+  border: 1px solid rgba(124, 77, 255, 0.2);
+  transition: var(--transition-normal);
+}
+
+.feature-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px var(--shadow-light);
+  background: var(--gradient-feature-hover);
+}
+
+/*==============================================================================
+ * RESPONSIVE ADJUSTMENTS
+ *==============================================================================*/
+@media (max-width: 768px) {
+  .main-header {
+    padding: var(--spacing-md);
+  }
+  
+  .main-header-content {
+    flex-direction: column;
+  }
+  
+  .main-header h1 {
+    font-size: 2rem !important;
+  }
+  
+  .main-header p {
+    font-size: 1rem !important;
+  }
+  
+  .feature-list {
+    flex-direction: column;
+    align-items: center;
+  }
+} 

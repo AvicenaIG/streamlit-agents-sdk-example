@@ -85,8 +85,12 @@ def setup_sidebar() -> None:
         # Dropdown to select provider
         active_providers = st.secrets["providers"]["active"]
         labels = st.secrets["provider_labels"]
+        
+        # Add a custom heading with CSS class
+        st.markdown('<h3 class="provider-heading">Select LLM Provider</h3>', unsafe_allow_html=True)
         selected_provider = st.selectbox(
-            "Select LLM Provider",
+            label="provider",
+            label_visibility="hidden",
             options=active_providers,
             index=0,
             format_func=lambda x: labels[x],

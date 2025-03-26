@@ -27,7 +27,7 @@ def main() -> None:
     # Load custom CSS
     load_css()
     
-    # Custom header with gradient background
+    # Load header 
     render_header()
     
     # Set up sidebar with LLM provider configuration

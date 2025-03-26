@@ -1,9 +1,9 @@
 [theme]
 base = "light"
-primaryColor = "#4A90E2"  # Soft blue for accents
-backgroundColor = "#f9f9f9"  # Soft off-white
-secondaryBackgroundColor = "#f0f2f5"  
-textColor = "#1f1f1f"  #
+primaryColor = "#7C4DFF"  # Modern purple for accents
+backgroundColor = "#FFFFFF"  # Clean white background
+secondaryBackgroundColor = "#F5F7FF"  # Light blue-ish background for cards
+textColor = "#262730"  # Darker text for better contrast
 font = "sans serif"
 
 [server]

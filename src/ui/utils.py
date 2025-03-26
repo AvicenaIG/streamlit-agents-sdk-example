@@ -6,6 +6,8 @@ response streaming, and message formatting.
 """
 
 import asyncio
+from pathlib import Path
+from typing import Dict, List, AsyncGenerator, Optional, Tuple
 
 import streamlit as st
 from openai import AsyncOpenAI
@@ -19,9 +21,118 @@ from agents import (
     HandoffOutputItem
 )
 
-from typing import Dict, List, AsyncGenerator
+#------------------------------------------------------------------------------
+# UI RENDERING FUNCTIONS
+#------------------------------------------------------------------------------
 
-def initialize_session_state():
+def load_css() -> None:
+    """Load external CSS file."""
+    css_file = Path(__file__).parent / "static" / "styles.css"
+    with open(css_file) as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+def render_header() -> None:
+    """Render the application header with logo and title."""
+    st.markdown(
+        '<div class="main-header">'
+        '<div class="main-header-content">'
+        '<img src="https://emoji.aranja.com/static/emoji-data/img-apple-160/1f916.png" '
+        'class="main-header-image">'
+        '<div>'
+        '<h1>✨ Talk to the Bots</h1>'
+        '<p>An agentic, multi-provider chatbot with character personalities</p>'
+        '</div>'
+        '</div>'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+def message_with_feedback(message: Dict, index: int) -> None:
+    """Display a single message with feedback if it's from the assistant."""
+    with st.chat_message(message["role"], avatar=message.get("emoji", "🤖")):
+        # If the message has steps, display them in an expander
+        if "steps" in message and message["steps"] and st.session_state.get("show_thinking", False):
+            with st.expander("Steps", expanded=False):
+                st.markdown("\n".join(message["steps"]))
+        
+        # Display the message content
+        st.markdown(message["content"])
+
+        # Show feedback for assistant messages
+        if message["role"] == "assistant":
+            feedback = st.feedback(
+                options="thumbs",
+                key=f"feedback_{index}"
+            )
+            if feedback:
+                st.session_state["messages"][index]["feedback"] = feedback
+
+def display_chat_history() -> None:
+    """Displays the chat in Streamlit."""
+    for i, message in enumerate(st.session_state["messages"]):
+        message_with_feedback(message, i)
+
+#------------------------------------------------------------------------------
+# CONFIGURATION AND SESSION STATE MANAGEMENT
+#------------------------------------------------------------------------------
+
+def setup_sidebar() -> None:
+    """Sets up the sidebar configuration."""
+    with st.sidebar:
+        st.markdown('<div class="sidebar-content">', unsafe_allow_html=True)
+        st.markdown('<hr class="sidebar-hr">', unsafe_allow_html=True)
+
+        # Dropdown to select provider
+        active_providers = st.secrets["providers"]["active"]
+        labels = st.secrets["provider_labels"]
+        selected_provider = st.selectbox(
+            "Select LLM Provider",
+            options=active_providers,
+            index=0,
+            format_func=lambda x: labels[x],
+            key="provider_select",
+        )
+
+        # LLM Provider Configuration
+        configure_llm_client(
+            selected_provider, selected_provider_label=labels[selected_provider]
+        )
+        
+        st.markdown('<hr class="sidebar-hr">', unsafe_allow_html=True)
+        
+        # Feature toggles
+        st.markdown('<h3 class="sidebar-heading">Features</h3>', unsafe_allow_html=True)
+        st.toggle("Show Thinking Process", value=st.session_state.get("show_thinking", True), key="show_thinking")
+        
+        st.markdown('<hr class="sidebar-hr">', unsafe_allow_html=True)
+        
+        # About section
+        st.markdown('<h3 class="sidebar-heading">About</h3>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="card">'
+            'This is a demo of a multi-agent chat system powered by different LLM providers.'
+            '</div>',
+            unsafe_allow_html=True
+        )
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+
+def get_streaming_status(provider: str) -> bool:
+    """
+    Determine if streaming is supported for a given provider.
+    
+    Args:
+        provider: The LLM provider name
+        
+    Returns:
+        Boolean indicating if streaming is supported
+    """
+    non_streaming_providers = {
+        "anthropic": False,
+    }
+    return non_streaming_providers.get(provider, True)
+
+def initialize_session_state() -> None:
     """Initialize all session state variables used in the app."""
     defaults = {
         "messages": [],
@@ -33,7 +144,7 @@ def initialize_session_state():
     for key, default_value in defaults.items():
         st.session_state.setdefault(key, default_value)
 
-def configure_llm_client(selected_provider: str, selected_provider_label: str):
+def configure_llm_client(selected_provider: str, selected_provider_label: str) -> None:
     """Configures the LLM client based on the selected provider."""
 
     # Load provider config
@@ -65,7 +176,11 @@ def configure_llm_client(selected_provider: str, selected_provider_label: str):
     st.session_state["model"] = provider_config.get("model")
     st.sidebar.success(f"Configured {selected_provider_label} client!")
 
-def get_emojis(provider: str):
+#------------------------------------------------------------------------------
+# AGENT INTERACTION UTILS
+#------------------------------------------------------------------------------
+
+def get_emojis(provider: str) -> Tuple[str, str]:
     """Set the emojis for the user and agent based on the provider."""
     emojis = {
         "openai": ("🐱", "🦖"),
@@ -77,7 +192,7 @@ def get_emojis(provider: str):
     return emojis.get(provider, ("🐱", "🤖"))
 
 
-def get_conversation_history_for_agent(messages: list[dict]) -> list[dict]:
+def get_conversation_history_for_agent(messages: List[Dict]) -> List[Dict]:
     """
     Prepares a clean conversation history for LLM input by stripping out
     non-relevant metadata (like emojis).
@@ -87,6 +202,10 @@ def get_conversation_history_for_agent(messages: list[dict]) -> list[dict]:
         for msg in messages
         if "content" in msg
     ]
+
+#------------------------------------------------------------------------------
+# RESPONSE STREAMING AND PROCESSING
+#------------------------------------------------------------------------------
 
 async def generate_response_stream(agent: Agent, prompt: str) -> AsyncGenerator[Dict, None]:
     """Yields token deltas and agent handover updates."""
@@ -131,6 +250,10 @@ async def get_agent_response(agent: Agent, prompt: str, stream: bool = False) ->
         steps = process_handoffs(result)
         return {"response": result.final_output, "steps": steps}
 
+#------------------------------------------------------------------------------
+# UI RESPONSE RENDERING
+#------------------------------------------------------------------------------
+
 def render_streaming_response(generator, agent_emoji: str) -> Dict:
     """Renders streaming content to Streamlit."""
     with st.chat_message("assistant", avatar=agent_emoji):
@@ -163,3 +286,49 @@ def render_static_response(response: Dict, agent_emoji: str) -> Dict:
             with st.expander("Steps"):
                 st.markdown("\n".join(response["steps"]))
     return response
+
+#------------------------------------------------------------------------------
+# CHAT INTERACTION HANDLER
+#------------------------------------------------------------------------------
+
+def handle_chat_interaction(agent: Agent, use_streaming: bool = True) -> None:
+    """Handles chat interaction with streaming/non-streaming options."""
+    provider = st.session_state.get("llm_provider")
+    user_emoji, agent_emoji = get_emojis(provider)
+    
+    # Check if provider supports streaming
+    can_stream = get_streaming_status(provider)
+    use_streaming = use_streaming and can_stream
+
+    if prompt := st.chat_input("Ask me anything...", key="chat_input"):
+        # Save user message
+        st.session_state["messages"].append({
+            "role": "user",
+            "content": prompt,
+            "emoji": user_emoji
+        })
+        
+        with st.chat_message("user", avatar=user_emoji):
+            st.markdown(prompt)
+
+        conversation_history = get_conversation_history_for_agent(st.session_state["messages"])
+        print(f"[debug - conversation_history]: {conversation_history}")
+        print(f"[debug - model]: {st.session_state['model']}")
+        # Get and render response
+        if use_streaming:
+            generator = generate_response_stream(agent, conversation_history)
+            response = render_streaming_response(generator, agent_emoji)
+        else:
+            with st.spinner("Thinking..."):
+                response = asyncio.run(get_agent_response(agent, conversation_history, stream=False))
+            response = render_static_response(response, agent_emoji)
+
+        # Save assistant response
+        st.session_state["messages"].append({
+            "role": "assistant",
+            "content": response["response"],
+            "emoji": agent_emoji,
+            "steps": response["steps"]
+        })
+        # Force rerun to update the chat display with feedback
+        st.rerun()

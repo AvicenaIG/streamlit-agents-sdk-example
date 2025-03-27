@@ -6,6 +6,9 @@ A flexible **Streamlit** app that integrates with **OpenAI's Agents SDK** to pow
 
 Supports Anthropic, OpenAI, and xAI (Grok).
 
+## Demo
+[Demo Video](https://github.com/user-attachments/assets/bf093db0-b398-4755-8ac7-783ca0597a37)
+
 ## Project Structure
 
 ```

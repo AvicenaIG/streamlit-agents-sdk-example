@@ -86,7 +86,7 @@ def create_agent(model=None):
         - For party, fun, or royal treatment questions, send to king_julien_agent
         - For questions about honor, tradition, protection, or overcoming challenges, send to mushu_agent 
         - For relaxation advice, laid-back philosophy, or worry-related questions, send to timon_agent
-        - For ambitious wishes, creative solutions, or entertainment-related questions, send to genie_agent
+        - For wishes or creative solutions send to genie_agent
         
         Silently route to the appropriate agent. Do not tell the user you are transferring them to another agent.
         

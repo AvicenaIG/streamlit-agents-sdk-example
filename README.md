@@ -2,7 +2,7 @@
 
 A flexible **Streamlit** app that integrates with **OpenAI's Agents SDK** to power a conversational AI agent with tools, multi-agent, and multi-LLM support.
 
-Supports Anthropic, Hugging Face, OpenAI, and xAI (Grok) — experiment with different providers on the fly.
+Supports Anthropic, OpenAI, and xAI (Grok).
 
 ## Project Structure
 
@@ -47,15 +47,11 @@ a. Get API keys for each provider you would like to use:
 
 - Anthropic: https://console.anthropic.com/settings/keys
 
-- Hugging Face: https://huggingface.co/settings/tokens  
-    Note: You must also set up an Inference Endpoint to use with your token ([guide](https://huggingface.co/docs/inference-endpoints/en/guides/create_endpoint))
-
 - OpenAI: https://platform.openai.com/account/api-keys
 
 - xAI (Grok via api.x.ai): https://x.ai (Log in and access your developer console)
 
-b. [Optional] Update .streamlit/secrets.toml with your API keys.  
-For Hugging Face you must also update the base_url with your endpoint URL. Alternatively, you can enter keys in the streamlit UI.
+b. [Optional] Update .streamlit/secrets.toml with your API keys. Alternatively, you can enter keys in the streamlit UI.
 
 ## License
 

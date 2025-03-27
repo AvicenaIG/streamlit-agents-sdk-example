@@ -118,8 +118,8 @@ def _configure_provider_selection() -> None:
 
     # Configure the selected LLM client
     configure_llm_client(
-        selected_provider, 
-        selected_provider_label=labels[selected_provider]
+        provider=selected_provider, 
+        provider_label=labels[selected_provider]
     )
 
 def _configure_feature_toggles() -> None:
@@ -181,43 +181,71 @@ def initialize_session_state() -> None:
         "messages": [],
         "llm_provider": None,
         "model": None,
+        "api_key_missing": True,
     }
     
     # Set default values for any uninitialized state
     for key, default_value in defaults.items():
         st.session_state.setdefault(key, default_value)
 
-def configure_llm_client(selected_provider: str, selected_provider_label: str) -> None:
-    """Configures the LLM client based on the selected provider."""
-
-    # Load provider config
-    provider_config = st.secrets.get(selected_provider)
+def get_provider_api_key(provider: str, provider_label: str) -> Optional[str]:
+    """
+    Get API key for the selected provider from secrets or user input.
     
-    # Get API key: instead of using an .env file, we get it from the user/.secrets
+    Args:
+        provider: The selected LLM provider identifier
+        provider_label: Display name for the selected provider
+        
+    Returns:
+        The API key if available, None otherwise
+    """
+    provider_config = st.secrets.get(provider, {})
+    
+    # Get API key from secrets or prompt user
     api_key = provider_config.get("api_key") or st.sidebar.text_input(
-        f"Enter {selected_provider_label} API Key", type="password"
+        f"Enter {provider_label} API Key", type="password"
     )
+    
     if not api_key:
-        st.sidebar.error(f"Please enter your {selected_provider_label} API key.")
-        st.stop()
+        st.sidebar.error(f"Please enter your {provider_label} API key.")
+        st.session_state["api_key_missing"] = True
+        return None
+    
+    return api_key
 
-    # Instantiate LLM client that is compatible with OpenAI API
-    custom_client = AsyncOpenAI(
-        api_key=api_key, base_url=provider_config.get("base_url")
-    )
-    set_default_openai_client(custom_client)
-
-    # If provider is not OpenAI, turn off tracing which is not supported
-    if selected_provider != "openai":
-        set_default_openai_api(
-            "chat_completions"
-        )  # most providers dont support responses API yet
-        set_tracing_disabled(disabled=True)
-
-    # Store selected provider and model in session state
-    st.session_state["llm_provider"] = selected_provider
+def configure_llm_client(provider: str, provider_label: str) -> None:
+    """
+    Configure the LLM client based on the selected provider.
+    
+    Args:
+        provider: The selected LLM provider identifier
+        provider_label: Display name for the selected provider
+    """
+    provider_config = st.secrets.get(provider, {})
+    api_key = get_provider_api_key(provider, provider_label)
+    
+    if not api_key:
+        return
+        
+    # Update session state
+    st.session_state["api_key_missing"] = False
+    st.session_state["llm_provider"] = provider
     st.session_state["model"] = provider_config.get("model")
-    st.sidebar.success(f"Configured {selected_provider_label} client!")
+    
+    # Initialize LLM client
+    client = AsyncOpenAI(
+        api_key=api_key, 
+        base_url=provider_config.get("base_url")
+    )
+    set_default_openai_client(client)
+    
+    # Configure provider-specific settings
+    if provider != "openai":
+        # Non-OpenAI providers only support chat completions API
+        set_default_openai_api("chat_completions")
+        set_tracing_disabled(True)
+    
+    st.sidebar.success(f"Configured {provider_label} client!")
 
 #------------------------------------------------------------------------------
 # AGENT INTERACTION UTILS
@@ -336,41 +364,61 @@ def render_static_response(response: Dict, agent_emoji: str) -> Dict:
 
 def handle_chat_interaction(agent: Agent) -> None:
     """Handles chat interaction with streaming/non-streaming options."""
-    provider = st.session_state.get("llm_provider")
-    user_emoji, agent_emoji = get_emojis(provider)
-    
-    # Get streaming preference from session state
-    use_streaming = st.session_state.get("use_streaming", True)
-
     if prompt := st.chat_input("Ask me anything...", key="chat_input"):
-        # Save user message
-        st.session_state["messages"].append({
-            "role": "user",
-            "content": prompt,
-            "emoji": user_emoji
-        })
+        # Setup chat environment and display user message
+        provider = st.session_state.get("llm_provider")
+        user_emoji, agent_emoji = get_emojis(provider)
         
-        with st.chat_message("user", avatar=user_emoji):
-            st.markdown(prompt)
-
-        conversation_history = get_conversation_history_for_agent(st.session_state["messages"])
-        print(f"[debug - conversation_history]: {conversation_history}")
-        print(f"[debug - model]: {st.session_state['model']}")
-        # Get and render response
-        if use_streaming:
-            generator = generate_response_stream(agent, conversation_history)
-            response = render_streaming_response(generator, agent_emoji)
-        else:
-            with st.spinner("Thinking..."):
-                response = asyncio.run(get_agent_response(agent, conversation_history, stream=False))
-            response = render_static_response(response, agent_emoji)
-
-        # Save assistant response
-        st.session_state["messages"].append({
-            "role": "assistant",
-            "content": response["response"],
-            "emoji": agent_emoji,
-            "steps": response["steps"]
-        })
-        # Force rerun to update the chat display with feedback
+        # Display and save user message
+        display_user_message(prompt, user_emoji)
+        
+        # Get agent response
+        response = get_response(agent, agent_emoji)
+        
+        # Save assistant message and update UI
+        save_assistant_message(response, agent_emoji)
         st.rerun()
+
+def display_user_message(prompt: str, user_emoji: str) -> None:
+    """Display and save the user message."""
+    # Save user message to session state
+    st.session_state["messages"].append({
+        "role": "user",
+        "content": prompt,
+        "emoji": user_emoji
+    })
+    
+    # Display in chat UI
+    with st.chat_message("user", avatar=user_emoji):
+        st.markdown(prompt)
+
+def get_response(agent: Agent, agent_emoji: str) -> Dict:
+    """Get appropriate response based on API key status and streaming preference."""
+    conversation_history = get_conversation_history_for_agent(st.session_state["messages"])
+    use_streaming = st.session_state.get("use_streaming", True)
+    
+    # Debug information
+    print(f"[debug - conversation_history]: {conversation_history}")
+    print(f"[debug - model]: {st.session_state.get('model')}")
+    
+    # Handle missing API key
+    if st.session_state.get("api_key_missing", True):
+        return {"response": "No API key provided, so here's a default joke: Why did the coffee file a police report? It got mugged.", "steps": []}
+    
+    # Get response using appropriate method
+    if use_streaming:
+        generator = generate_response_stream(agent, conversation_history)
+        return render_streaming_response(generator, agent_emoji)
+    else:
+        with st.spinner("Thinking..."):
+            response = asyncio.run(get_agent_response(agent, conversation_history, stream=False))
+        return render_static_response(response, agent_emoji)
+
+def save_assistant_message(response: Dict, agent_emoji: str) -> None:
+    """Save assistant message to session state."""
+    st.session_state["messages"].append({
+        "role": "assistant",
+        "content": response["response"],
+        "emoji": agent_emoji,
+        "steps": response["steps"]
+    })

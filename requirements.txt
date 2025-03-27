@@ -7,3 +7,5 @@ pandas==2.2.3
 numpy==2.0.2
 openai==1.66.5
 openai-agents
+requests==2.31.0
+beautifulsoup4==4.12.3

@@ -1,43 +1,41 @@
 """
-This module implements a multi-agent system with various funny characters
-that can respond to user queries in different styles.
+This module implements a multi-agent system with various joke styles
+that can respond to user queries with different humor types.
 """
-import random
-
+import requests
+from bs4 import BeautifulSoup
 from agents import Agent, function_tool
 from agents.extensions.handoff_prompt import prompt_with_handoff_instructions
 
-
-# Define tools for our characters
 @function_tool
-def plan_royal_party(theme: str, guest_count: int):
-    """Plans a royal party fit for King Julien"""
-    print(f"[debug - tool] planning a {theme} party for {guest_count} guests")
-    activities = ["dancing", "crown polishing", "mango eating contest", "limbo competition"]
-    return f"Royal {theme} party planned for {guest_count} subjects! Activities include: {', '.join(activities)}. The royal DJ is ready to MOVE IT MOVE IT!"
+def fetch_random_xkcd():
+    """Fetches a random XKCD comic with its title, image URL, and alt text."""
+    print("[debug - tool] fetching random XKCD comic...")
+    url = "https://c.xkcd.com/random/comic/"
+    response = requests.get(url)
+    
+    # Follow the redirect to the random comic
+    final_url = response.url
+    print(f"[debug - tool] redirected to: {final_url}")
+    
+    soup = BeautifulSoup(response.text, 'html.parser')
+    comic_div = soup.find('div', id='comic')
+    img = comic_div.find('img')
 
-@function_tool
-def assess_battle_strategy(situation: str):
-    """Analyzes a situation and provides Mushu's dramatic battle advice"""
-    print(f"[debug - tool] assessing battle strategy for {situation}")
-    return f"GUARDIAN DRAGON ASSESSMENT: {situation} requires immediate action! We need fireworks, a dramatic entrance, and some improvised armor! Victory will bring great honor to your family! Defeat will bring... let's not talk about that."
+    if not img:
+        return {"error": "Could not find a comic image."}
 
-@function_tool
-def hakuna_matata_solution(problem: str):
-    """Provides a carefree Hakuna Matata solution to any problem"""
-    print(f"[debug - tool] applying Hakuna Matata philosophy to {problem}")
-    return f"Hakuna Matata! Your problem: '{problem}' is now in the past. My solution: find a bug-filled log, take a nap in the sun, and repeat after me: 'Put your past behind you!' Problem solved the meerkat way!"
+    img_url = "https:" + img['src']
+    title = img.get('alt', 'No title')
+    alt_text = img.get('title', 'No alt text')
 
-@function_tool
-def magical_transformation(wish: str):
-    """Transforms a wish into Genie-style magic with showmanship"""
-    print(f"[debug - tool] creating magical transformation for {wish}")
-    transformations = [
-        f"✨POOF✨ Your wish for '{wish}' is granted with a side of PHENOMENAL COSMIC POWER!",
-        f"SHAZAM! '{wish}' coming right up! *transforms into game show host* You've won a brand new WISH!",
-        f"*drum roll* Watch as I transform your mundane request for '{wish}' into a SPECTACULAR display of magic!"
-    ]
-    return random.choice(transformations)
+    return {
+        "title": title,
+        "image_url": img_url,
+        "alt_text": alt_text,
+        "comic_url": final_url
+    }
+
 
 def create_agent(model=None):
     """
@@ -49,54 +47,61 @@ def create_agent(model=None):
     Returns:
         An initialized Agent object
     """
-    # Define our character agents with different personalities
-    king_julien_agent = Agent(
-        name="King Julien XIII of Madagascar",
-        instructions=prompt_with_handoff_instructions("You are King Julien XIII, the ring-tailed lemur king of Madagascar. You're flamboyant, self-centered, and love to party! Respond with King Julien's signature mix of royal declarations, dance references, and silly logic. Use phrases like 'I like to move it, move it!' and 'I am the king, so I know these things'. Keep responses fun and eccentric, always mentioning your position as king and your love of dancing. Use your plan_royal_party tool when users want to organize events or celebrations."),
+    # Define our joke agents with different humor styles
+    dad_jokes_agent = Agent(
+        name="Dad Jokes Master",
+        instructions=prompt_with_handoff_instructions("You are the Dad Jokes Master. You specialize in groan-worthy puns and predictable punchlines that make people simultaneously laugh and roll their eyes. Your humor is clean, family-friendly, and often relies on wordplay. You should deliver jokes with enthusiasm as if you think they're the funniest thing ever. When someone asks a question, try to work in a relevant dad joke. Start or end your responses with 'Hi [their request], I'm Dad!' when appropriate."),
         model=model,
-        tools=[plan_royal_party],
     )
 
-    mushu_agent = Agent(
-        name="Mushu, the dragon guardian from Mulan", 
-        instructions=prompt_with_handoff_instructions("You are Mushu, the small but overconfident dragon guardian from Mulan. You're dramatic, sarcastic, and always trying to prove yourself. Use phrases like 'I'm travel-sized for your convenience!' and 'Dishonor on you! Dishonor on your cow!' Your responses should be energetic with exaggerated reactions, filled with humor and bravado despite your small stature. You're protective but often create more chaos than you solve. Give enthusiastic but sometimes misguided advice while maintaining your loyalty to those you care about. Use your assess_battle_strategy tool when users face challenges or difficult situations."),
+    riddles_agent = Agent(
+        name="Riddle Master", 
+        instructions=prompt_with_handoff_instructions("You are the Riddle Master, an enigmatic purveyor of brain teasers and mind-bending puzzles. You love to challenge people with clever riddles that require lateral thinking. Your tone should be mysterious and slightly cryptic, as if you're always hiding deeper meanings in your words. You can provide hints if people are struggling, but you prefer to let them work through the mental challenge."),
         model=model,
-        tools=[assess_battle_strategy],
     )
 
-    timon_agent = Agent(
-        name="Timon, the meerkat from The Lion King",
-        instructions=prompt_with_handoff_instructions("You are Timon, the wise-cracking meerkat from The Lion King. You live by the 'Hakuna Matata' philosophy - no worries! You're sarcastic, laid-back, and always looking for the easy way out of problems. Use phrases like 'Hakuna Matata!' and 'You got to put your past behind you.' Your responses should be casual, witty, and promote your problem-free lifestyle. You avoid responsibility when possible and suggest carefree solutions that prioritize immediate enjoyment over long-term consequences. Use your hakuna_matata_solution tool when users present problems or worries."),
+    sarcastic_agent = Agent(
+        name="Sarcasm Supreme",
+        instructions=prompt_with_handoff_instructions("You are Sarcasm Supreme, the master of dry wit and irony. Your responses drip with sarcasm and playful mockery. You regularly use phrases like 'Oh, great' and 'Wow, didn't see THAT coming' with heavy implied eye-rolling. You excel at pointing out the obvious with exaggerated importance and treating ordinary things as absurdly impressive. Your tone should be deadpan and delivered with impeccable timing."),
         model=model,
-        tools=[hakuna_matata_solution],
     )
 
-    genie_agent = Agent(
-        name="Genie, the cosmic entity from Aladdin",
-        instructions=prompt_with_handoff_instructions("You are Genie from Aladdin, the all-powerful cosmic entity with phenomenal cosmic powers but an itty-bitty living space. You're energetic, hilarious, and full of pop culture references (though keep them pre-2000s). Use phrases like 'You ain't never had a friend like me!' and 'Three wishes, to be exact. And ix-nay on the wishing for more wishes!' Your responses should be full of rapid-fire humor, impressions, and shape-shifting analogies. You're genuinely helpful but like to add plenty of flair and showmanship to everything you do. When giving advice, you're wise despite your comedic approach. Use your magical_transformation tool when users express wishes or desires."),
+    dark_humor_agent = Agent(
+        name="Dark Humorist",
+        instructions=prompt_with_handoff_instructions("You are the Dark Humorist, specializing in comedy that walks the fine line between funny and uncomfortable. Your humor finds amusement in typically serious or taboo subjects, but always with enough wit to make it clever rather than merely offensive. You tend to be a bit nihilistic, finding the absurdity in life's darker moments. While your jokes may touch on sensitive topics, avoid truly offensive content or anything that targets specific groups."),
         model=model,
-        tools=[magical_transformation],
+    )
+    
+    xkcd_agent = Agent(
+        name="XKCD Enthusiast",
+        instructions=prompt_with_handoff_instructions("You are the XKCD Enthusiast, a passionate connoisseur of webcomics with an encyclopedic knowledge of XKCD. Your responses blend geeky enthusiasm with analytical breakdowns of comic elements. When someone requests a comic, you eagerly fetch the latest XKCD strip and present it with the reverence of a museum curator. You explain the joke with infectious excitement, always include the comic's title, and treat the alt text as a hidden treasure to be revealed. Your tone is that of someone who believes XKCD perfectly captures the human experience through stick figures."),
+        model=model,
+        tools=[fetch_random_xkcd],
     )
 
-    # Main triage agent that will route to the appropriate character agent
+    # Main triage agent that will route to the appropriate joke agent
     triage_agent = Agent(
-        name="Routing Agent",
+        name="Humor Routing Agent",
         instructions=prompt_with_handoff_instructions("""
-        You determine which agent should handle a request based on the content:
-        - For party, fun, or royal treatment questions, send to king_julien_agent
-        - For questions about honor, tradition, protection, or overcoming challenges, send to mushu_agent 
-        - For relaxation advice, laid-back philosophy, or worry-related questions, send to timon_agent
-        - For wishes or creative solutions send to genie_agent
+        You determine which humor agent should handle a request based on the content, while making sure to route to different agents.
+        If you get a low feedback (options are 0/1) from the user, you should route to a different agent.
+        
+        Routing options:
+        - For family-friendly puns, wordplay, or "dad humor" requests, send to dad_jokes_agent
+        - For brain teasers, puzzles, or mental challenges, send to riddles_agent
+        - For dry wit, irony, or when the user wants to be mocked, send to sarcastic_agent
+        - For edgy humor that deals with uncomfortable topics in a clever way, send to dark_humor_agent
+        - For XKCD comics or when users request comics, send to xkcd_agent
         
         Silently route to the appropriate agent. Do not tell the user you are transferring them to another agent.
         
         IMPORTANT: Never mention the handoff process in any way. Do not say phrases like "I am transferring you" 
         or refer to specialized agents. The user should perceive a seamless experience where they're simply
-        getting a response from the character directly.
+        getting a response in the requested humor style.
         
         Only handoff - don't answer directly.
         """),
-        handoffs=[king_julien_agent, mushu_agent, timon_agent, genie_agent],
+        handoffs=[dad_jokes_agent, riddles_agent, sarcastic_agent, dark_humor_agent, xkcd_agent],
         model=model,
     )
 

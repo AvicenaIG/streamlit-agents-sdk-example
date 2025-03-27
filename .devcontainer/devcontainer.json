@@ -10,7 +10,14 @@
       ]
     },
     "vscode": {
-      "settings": {},
+      "settings": {
+        "python.analysis.extraPaths": [
+          "${workspaceFolder}"
+        ],
+        "terminal.integrated.env.linux": {
+          "PYTHONPATH": "${workspaceFolder}"
+        }
+      },
       "extensions": [
         "ms-python.python",
         "ms-python.vscode-pylance"
@@ -29,5 +36,6 @@
   },
   "forwardPorts": [
     8501
-  ]
+  ],
+  "postCreateCommand": "pip install -e ."
 }

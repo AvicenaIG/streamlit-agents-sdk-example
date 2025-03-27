@@ -40,7 +40,7 @@ def render_header() -> None:
         'class="main-header-image">'
         '<div>'
         '<h1>✨ Talk to the Bots</h1>'
-        '<p>An agentic, multi-provider chatbot with character personalities</p>'
+        '<p>An agentic, multi-provider chatbot trying to make you laugh</p>'
         '</div>'
         '</div>'
         '</div>',
@@ -156,7 +156,7 @@ def _display_about_section() -> None:
     st.markdown('<h3 class="sidebar-heading">About</h3>', unsafe_allow_html=True)
     st.markdown(
         '<div class="card">'
-        'This is a demo of a multi-agent chat system powered by different LLM providers.'
+        'Can an LLM make you laugh? Probably not, but here\'s a demo of a multi-agent doing its best.'
         '</div>',
         unsafe_allow_html=True
     )

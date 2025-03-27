@@ -2,6 +2,12 @@
 This module implements a Streamlit UI for a multi-agent chat system.
 It handles the web interface, chat display, and agent responses.
 """
+import sys
+import os
+# Add root to path for Streamlit cloud deployment
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+
+
 import streamlit as st
 
 from src.agent.agent import create_agent

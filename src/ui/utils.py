@@ -64,7 +64,8 @@ def message_with_feedback(message: Dict, index: int) -> None:
                 options="thumbs",
                 key=f"feedback_{index}"
             )
-            if feedback:
+            if feedback is not None:
+                print(f"[debug - got feedback]: {feedback}")  
                 st.session_state["messages"][index]["feedback"] = feedback
 
 def display_chat_history() -> None:

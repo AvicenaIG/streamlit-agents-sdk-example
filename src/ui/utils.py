@@ -65,7 +65,6 @@ def message_with_feedback(message: Dict, index: int) -> None:
                 key=f"feedback_{index}"
             )
             if feedback is not None:
-                print(f"[debug - got feedback]: {feedback}")  
                 st.session_state["messages"][index]["feedback"] = feedback
 
 def display_chat_history() -> None:
@@ -172,7 +171,7 @@ def get_streaming_status(provider: str) -> bool:
         Boolean indicating if streaming is supported
     """
     non_streaming_providers = {
-        "anthropic": False,
+        "anthropic": False, # As of 2025-03, Anthropic didn't readily support agent.stream_events()
     }
     return non_streaming_providers.get(provider, True)
 

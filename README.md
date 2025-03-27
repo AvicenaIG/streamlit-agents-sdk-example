@@ -1,5 +1,7 @@
 # Steamlit AI Agent
 
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://agent-chat.streamlit.app/)
+
 A flexible **Streamlit** app that integrates with **OpenAI's Agents SDK** to power a conversational AI agent with tools, multi-agent, and multi-LLM support.
 
 Supports Anthropic, OpenAI, and xAI (Grok).

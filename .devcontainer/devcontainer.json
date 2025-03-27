@@ -27,7 +27,7 @@
 
   "updateContentCommand": "pip install --no-cache-dir -r requirements.txt && pip install --no-cache-dir streamlit",
 
-  "postAttachCommand": "export PYTHONPATH=${PWD}/src && python -m streamlit run src/ui/streamlit_app.py --server.enableCORS false --server.enableXsrfProtection false",
+  "postAttachCommand": "PYTHONPATH=${PWD}/src python -m streamlit run src/ui/streamlit_app.py --server.enableCORS false --server.enableXsrfProtection false",
 
   "portsAttributes": {
     "8501": {

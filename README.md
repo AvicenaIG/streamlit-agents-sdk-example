@@ -1,4 +1,4 @@
-# Steamlit AI Agent
+# Streamlit AI Agent
 
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://agent-chat.streamlit.app/)
 
